@@ -28,9 +28,15 @@
     .accent1{border-top:7px solid var(--sun)}.accent2{border-top:7px solid var(--mint)}.accent3{border-top:7px solid var(--sky)}.accent4{border-top:7px solid var(--lav)}.accent5{border-top:7px solid var(--coral)}.accent6{border-top:7px solid var(--rose)}
     .song-grid{grid-template-columns:repeat(auto-fit,minmax(235px,1fr))}.song{display:flex;flex-direction:column;justify-content:space-between;min-height:150px}
     .secret-trigger{display:inline-block;user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
-    .secret-resources{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;box-shadow:var(--shadow);width:max-content;max-width:100%}
-    .secret-resources.show{display:flex}
-    .secret-resources a{display:inline-block;text-decoration:none;color:var(--ink);background:#f4f0e8;border-radius:999px;padding:7px 11px;font-weight:800;font-size:.88rem}
+    .secret-backdrop{display:none;position:fixed;inset:0;z-index:1000;background:rgba(31,41,55,.28);padding:18px;align-items:center;justify-content:center}
+    .secret-backdrop.show{display:flex}
+    .secret-popup{position:relative;width:min(520px,94vw);background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:0 24px 70px rgba(31,41,55,.28);padding:28px 24px 22px}
+    .secret-popup h3{margin:0 38px 14px 0;font-size:1.25rem}
+    .secret-popup-links{display:grid;gap:10px}
+    .secret-popup-links a{display:block;text-decoration:none;color:var(--ink);background:#f4f0e8;border-radius:999px;padding:11px 14px;font-weight:800}
+    .secret-popup-links a:hover,.secret-popup-links a:focus{background:#ebe5d9;outline:none}
+    .secret-close{position:absolute;top:12px;right:12px;width:36px;height:36px;border:0;border-radius:999px;background:#f4f0e8;color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+    .secret-close:hover,.secret-close:focus{background:#e8e0d2;outline:2px solid #8ecdf8;outline-offset:2px}
     .button{display:inline-block;width:max-content;max-width:100%;text-decoration:none;background:var(--ink);color:white;padding:9px 13px;border-radius:10px;font-weight:800;margin-top:10px}
     .tag{display:inline-block;font-size:.75rem;padding:4px 8px;border-radius:999px;background:#f4f0e8;margin-right:5px;margin-bottom:5px}
     .games{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}.game-icon{font-size:1.7rem}
@@ -73,9 +79,15 @@
 
 <section id="songs">
   <h2 id="secretSongsTrigger" class="secret-trigger" tabindex="0" role="button" aria-describedby="secretSongsHint" aria-expanded="false">Sing-along library 🎵</h2>
-  <div id="secretResources" class="secret-resources" aria-hidden="true">
-    <a href="https://padlet.com/JulieIraninejad/creative-ideas-for-teaching-the-lessons-of-ruhi-grade-1-c3jgsmd1f00av2gy" target="_blank" rel="noopener noreferrer">Age 5+ ↗</a>
-    <a href="https://padlet.com/JulieIraninejad/bahai-children-s-classes-for-preschoolers-dyz78irb9p6mcehw" target="_blank" rel="noopener noreferrer">Under 5 ↗</a>
+  <div id="secretResources" class="secret-backdrop" aria-hidden="true">
+    <div class="secret-popup" role="dialog" aria-modal="true" aria-labelledby="secretPopupTitle">
+      <button id="secretClose" class="secret-close" type="button" aria-label="Close external links">×</button>
+      <h3 id="secretPopupTitle">Here are some external links</h3>
+      <div class="secret-popup-links">
+        <a href="https://padlet.com/JulieIraninejad/creative-ideas-for-teaching-the-lessons-of-ruhi-grade-1-c3jgsmd1f00av2gy" target="_blank" rel="noopener noreferrer">From the Virtues Program — age 5+ ↗</a>
+        <a href="https://padlet.com/JulieIraninejad/bahai-children-s-classes-for-preschoolers-dyz78irb9p6mcehw" target="_blank" rel="noopener noreferrer">From the Virtues Program — under 5 ↗</a>
+      </div>
+    </div>
   </div>
   <span id="secretSongsHint" class="note" style="position:absolute;left:-9999px">Press and hold for 3 seconds to reveal additional teaching resources.</span>
   <p class="lead">These are specific, secular, kid-friendly versions chosen for easy group singing. For traditional songs, the linked versions use non-religious lyrics; for pop and movie songs, the selections are clean family versions or children’s covers.</p>
@@ -153,10 +165,10 @@
 (() => {
   const trigger = document.getElementById('secretSongsTrigger');
   const resources = document.getElementById('secretResources');
-  if (!trigger || !resources) return;
+  const closeButton = document.getElementById('secretClose');
+  if (!trigger || !resources || !closeButton) return;
 
   let holdTimer = null;
-  let revealed = false;
 
   const clearHold = () => {
     if (holdTimer) {
@@ -167,15 +179,22 @@
 
   const reveal = () => {
     clearHold();
-    if (revealed) return;
-    revealed = true;
     resources.classList.add('show');
     resources.setAttribute('aria-hidden', 'false');
     trigger.setAttribute('aria-expanded', 'true');
+    closeButton.focus();
+  };
+
+  const closePopup = () => {
+    clearHold();
+    resources.classList.remove('show');
+    resources.setAttribute('aria-hidden', 'true');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.focus();
   };
 
   const startHold = (event) => {
-    if (revealed) return;
+    if (resources.classList.contains('show')) return;
     if (event.type === 'pointerdown' && event.button !== undefined && event.button !== 0) return;
     clearHold();
     holdTimer = setTimeout(reveal, 3000);
@@ -197,6 +216,14 @@
     if (e.key === ' ' || e.key === 'Enter') clearHold();
   });
   trigger.addEventListener('blur', clearHold);
+
+  closeButton.addEventListener('click', closePopup);
+  resources.addEventListener('click', (e) => {
+    if (e.target === resources) closePopup();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && resources.classList.contains('show')) closePopup();
+  });
 })();
 </script>
 
